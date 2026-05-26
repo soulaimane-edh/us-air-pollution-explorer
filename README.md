@@ -10,9 +10,9 @@ Screenshots are available in [`docs/assets/screenshots`](docs/assets/screenshots
 
 ## Demo Video
 
-A demo video showing the dashboard functionalities is available here:
+A short demo video is included in this repository to showcase the main dashboard functionalities.
 
-[Watch the demo video](docs/demo/air-pollution-dashboard-demo.mp4)
+[Watch the demo video](Demo%20of%20the%20Project.mp4)
 
 ## Features
 
