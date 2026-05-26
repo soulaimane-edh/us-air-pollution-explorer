@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>US Air Pollution Explorer</title>
+  </head>
+  <body>
+    <div id="app">
+      <aside class="layout-presets" aria-label="View mode navigation">
+          <span>View Mode</span>
+          <button type="button" class="active" data-layout="overview">Overview</button>
+          <button type="button" data-layout="state-profile">State Profile</button>
+          <button type="button" data-layout="compare">Compare</button>
+        </aside>
+
+      <main class="app-shell">
+        <header class="app-header" id="overview">
+          <div>
+            <h1>US Air Pollution Explorer <span>(D3.js + Leaflet)</span></h1>
+            <p>2000-2016 US air pollution: exploring NO2, O3, SO2, and CO across states and cities</p>
+          </div>
+          <div class="header-actions">
+            <span>Data as of: 2016</span>
+            <button type="button">Share</button>
+            <button type="button">Export</button>
+          </div>
+        </header>
+
+        <section class="control-bar" aria-label="Dashboard controls">
+          <section class="control-block">
+            <label for="pollutant">Pollutant</label>
+            <select id="pollutant"></select>
+          </section>
+
+          <section class="control-block year-control">
+            <label for="year">Year</label>
+            <div class="year-row">
+              <strong>2000</strong>
+              <button id="play-year" type="button" aria-label="Play year animation">▶︎</button>
+              <input id="year" type="range" min="2000" max="2016" value="2016" step="1" />
+              <strong id="year-value">2016</strong>
+            </div>
+          </section>
+
+          <section class="control-block">
+            <label for="state-filter">State</label>
+            <select id="state-filter"></select>
+          </section>
+
+          <section class="control-block">
+            <label for="city-filter">City</label>
+            <select id="city-filter">
+              <option>All Cities</option>
+            </select>
+          </section>
+
+          <section class="control-block metric-control">
+            <label for="metric">Metric</label>
+            <div class="segmented two" id="metric" role="group" aria-label="Metric"></div>
+          </section>
+
+          <button id="reset-filters" class="reset-button" type="button">Reset Filters</button>
+
+          <button id="reset-layout" class="reset-button layout-reset-button" type="button">Reset View</button>
+        </section>
+
+        <section class="kpi-grid" aria-label="Summary metrics">
+          <article class="kpi-card circular">
+            <div class="score-ring"><strong id="kpi-average">-</strong></div>
+            <div>
+              <span>US AVG AQI</span>
+              <strong id="kpi-status">Good</strong>
+              <small id="kpi-change">Selected year average</small>
+            </div>
+          </article>
+          <article class="kpi-card state-card">
+            <div class="state-shape">ST</div>
+            <div>
+              <span>Highest State</span>
+              <strong id="kpi-state">-</strong>
+              <small id="kpi-state-value">Avg: -</small>
+            </div>
+          </article>
+          <article class="kpi-card city-card">
+            <div class="mini-bars"></div>
+            <div>
+              <span>Most Polluted City</span>
+              <strong id="kpi-city">-</strong>
+              <small id="kpi-city-value">Avg: -</small>
+            </div>
+          </article>
+          <article class="kpi-card clean-card">
+            <div class="leaf-mark"></div>
+            <div>
+              <span>Cleanest State</span>
+              <strong id="kpi-clean">-</strong>
+              <small id="kpi-clean-value">Avg: -</small>
+            </div>
+          </article>
+          <article class="kpi-card sites-card">
+            <div class="tower-mark"></div>
+            <div>
+              <span>Monitoring Sites</span>
+              <strong id="kpi-sites">-</strong>
+              <small id="kpi-site-state">Across monitored states</small>
+            </div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel map-panel" id="map-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Pollutant Concentration by State</h2>
+                <p id="map-caption">Mean concentration by state</p>
+              </div>
+              <div id="legend" class="legend"></div>
+            </div>
+            <div id="map"></div>
+          </article>
+
+          <article class="panel trend-panel" id="trend-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Trend Over Time (US Average AQI)</h2>
+                <p id="trend-caption">US average by pollutant</p>
+              </div>
+              <select id="trend-state"></select>
+            </div>
+            <svg id="line-chart" class="chart"></svg>
+          </article>
+
+          <article class="panel heatmap-panel" id="heatmap-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Concentration Heatmap by State and Year</h2>
+                <p>Top monitored states ranked by long-term mean concentration</p>
+              </div>
+            </div>
+            <svg id="heatmap" class="chart heatmap-chart"></svg>
+          </article>
+
+          <article class="panel selected-panel">
+            <div class="panel-heading compact">
+              <h2>State Summary</h2>
+              <div class="selected-actions">
+                <button id="clear-state" type="button" aria-label="Clear selected state">×</button>
+              </div>
+            </div>
+
+            <div class="selected-top">
+              <div class="selected-state-main">
+                <div class="selected-state-icon" id="selected-state-icon">ST</div>
+                <div>
+                  <h3 id="selected-state-name">California</h3>
+                  <p id="selected-state-rank">Avg AQI Rank (2016)</p>
+                </div>
+              </div>
+              <div class="rank-pill" id="selected-state-rank-badge">#-</div>
+            </div>
+
+            <div class="selected-kpis">
+              <div>
+                <span>Avg <span id="selected-state-metric-label">AQI</span> (<span id="selected-state-year-label">2016</span>)</span>
+                <strong id="selected-state-value">-</strong>
+              </div>
+              <div>
+                <span>Change vs 2000</span>
+                <strong id="selected-state-change">-</strong>
+              </div>
+              <div>
+                <span>Monitoring Sites</span>
+                <strong id="selected-state-sites">-</strong>
+              </div>
+            </div>
+
+            <div class="summary-insights">
+              <div>
+                <span>Main pollutant</span>
+                <strong id="selected-main-pollutant">-</strong>
+              </div>
+              <div>
+                <span>City signal</span>
+                <strong id="selected-city-signal">-</strong>
+              </div>
+              <div>
+                <span>Data source</span>
+                <strong id="selected-data-source">-</strong>
+              </div>
+            </div>
+
+            <div class="state-breakdown" id="state-breakdown"></div>
+          </article>
+
+          <article class="panel city-panel" id="city-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Top 10 Most Polluted Cities</h2>
+                <p id="bar-caption">Highest city averages for selected year</p>
+              </div>
+              <select id="bar-metric"></select>
+            </div>
+            <div class="city-grid">
+              <svg id="bar-chart" class="chart"></svg>
+              <div class="aqi-legend">
+                <h3>AQI Category</h3>
+                <p><span class="hazardous"></span>Hazardous (301+)</p>
+                <p><span class="very-unhealthy"></span>Very Unhealthy (201-300)</p>
+                <p><span class="unhealthy"></span>Unhealthy (151-200)</p>
+                <p><span class="unhealthy-sensitive"></span>Unhealthy for Sensitive Groups (101-150)</p>
+                <p><span class="moderate"></span>Moderate (51-100)</p>
+                <p><span class="good"></span>Good (0-50)</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel radar-panel" id="profile-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Pollution Profile vs National Avg</h2>
+                <p id="radar-caption">Selected state profile compared with national average</p>
+              </div>
+              <span class="panel-chip" id="radar-state-label">State</span>
+            </div>
+            <svg id="radar-chart" class="chart profile-chart"></svg>
+          </article>
+
+          <article class="panel seasonal-panel" id="seasonal-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Seasonal Heatmap — Monthly Pattern</h2>
+                <p id="seasonal-caption">Average monthly pollution intensity by pollutant</p>
+              </div>
+              <span class="panel-chip">Jan-Dec</span>
+            </div>
+            <svg id="seasonal-heatmap" class="chart seasonal-chart"></svg>
+          </article>
+
+          <article class="panel compare-panel" id="compare-section">
+            <div class="panel-heading">
+              <div>
+                <h2>Compare Mode</h2>
+                <p id="compare-caption">Compare two states across pollutants, rankings, and trends</p>
+              </div>
+              <div class="compare-controls">
+                <select id="compare-a"></select>
+                <span>vs</span>
+                <select id="compare-b"></select>
+              </div>
+            </div>
+            <div id="compare-view" class="compare-view"></div>
+          </article>
+
+        </section>
+
+        <footer class="app-footer">
+          <span>Sources: EPA Air Quality System (AQS)</span>
+          <span>Kaggle + EPA AirData; estimated values are marked in tooltips where used.</span>
+          <span>Dashboard generated locally</span>
+        </footer>
+      </main>
+    </div>
+    <div id="tooltip" class="tooltip" role="status"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
