@@ -8,6 +8,12 @@ The dashboard transforms a large multidimensional air pollution dataset into an 
 
 Screenshots are available in [`docs/assets/screenshots`](docs/assets/screenshots/).
 
+## Demo Video
+
+A demo video showing the dashboard functionalities is available here:
+
+[Watch the demo video](docs/demo/air-pollution-dashboard-demo.mp4)
+
 ## Features
 
 - **One-screen Overview** for fast interpretation.
